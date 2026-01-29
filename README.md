@@ -9,6 +9,16 @@
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/SCORPION)](https://cran.r-project.org/package=SCORPION)
 <!-- badges: end -->
 
+## What's New 🎉
+
+**v1.2.1** (January 2026)
+
+- 📚 **Documentation website**: Full pkgdown site with tutorials at <https://zaoqu-liu.github.io/SCORPION/>
+- 📖 **Vignettes**: 4 comprehensive guides (Quick Start, Algorithm, Advanced Usage, Visualization)
+- ⚡ **Performance**: Vectorized operations for improved speed
+- 🛡️ **Robustness**: Enhanced numerical stability in Tanimoto similarity
+- 🌐 **R-universe**: Easy installation via `install.packages("SCORPION", repos = "https://zaoqu-liu.r-universe.dev")`
+
 ## Overview
 
 **SCORPION** (**S**ingle-**C**ell **O**riented **R**econstruction of **P**ANDA **I**ndividually **O**ptimized Gene Regulatory **N**etworks) is a computational framework for inferring cell-type-specific gene regulatory networks (GRNs) from single-cell RNA sequencing (scRNA-seq) data.
