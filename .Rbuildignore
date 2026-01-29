@@ -3,3 +3,7 @@
 LICENSE
 inst/hg38*
 README.md
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$

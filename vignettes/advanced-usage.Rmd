@@ -1,0 +1,376 @@
+---
+title: "Advanced Usage and Best Practices"
+author: "Zaoqu Liu"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Advanced Usage and Best Practices}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Introduction
+
+This vignette covers advanced usage patterns, parameter tuning, and best practices for using SCORPION effectively.
+
+```{r load}
+library(SCORPION)
+library(Matrix)
+data(scorpionTest)
+```
+
+## Parameter Tuning
+
+### Gamma Value (Metacell Aggregation)
+
+The `gammaValue` parameter controls how many cells are aggregated into each metacell:
+
+```{r gamma, cache=TRUE}
+# Test different gamma values
+gammas <- c(5, 10, 20)
+results_gamma <- list()
+
+for(g in gammas) {
+  set.seed(123)
+  results_gamma[[as.character(g)]] <- scorpion(
+    tfMotifs = scorpionTest$tf,
+    gexMatrix = scorpionTest$gex,
+    ppiNet = scorpionTest$ppi,
+    gammaValue = g,
+    alphaValue = 0.5,
+    hammingValue = 0.01,
+    showProgress = FALSE
+  )
+}
+
+# Compare network statistics
+cat("Effect of gamma on network properties:\n")
+for(g in gammas) {
+  r <- results_gamma[[as.character(g)]]
+  cat(sprintf("gamma=%d: mean=%.3f, sd=%.3f\n", 
+              g, mean(r$regNet), sd(r$regNet)))
+}
+```
+
+**Guidelines:**
+- **γ = 5-10**: For small datasets (< 1000 cells)
+- **γ = 10-20**: For medium datasets (1000-10000 cells)  
+- **γ = 20-50**: For large datasets (> 10000 cells)
+
+### Alpha Value (Learning Rate)
+
+The `alphaValue` controls how quickly networks are updated:
+
+```{r alpha, cache=TRUE}
+# Test different alpha values
+alphas <- c(0.05, 0.1, 0.2)
+results_alpha <- list()
+
+for(a in alphas) {
+  set.seed(123)
+  results_alpha[[as.character(a)]] <- scorpion(
+    tfMotifs = scorpionTest$tf,
+    gexMatrix = scorpionTest$gex,
+    ppiNet = scorpionTest$ppi,
+    gammaValue = 10,
+    alphaValue = a,
+    hammingValue = 0.001,
+    showProgress = FALSE
+  )
+}
+
+# Compare convergence behavior
+cat("Effect of alpha on convergence:\n")
+for(a in alphas) {
+  r <- results_alpha[[as.character(a)]]
+  cat(sprintf("alpha=%.2f: edges=%d\n", a, r$numEdges))
+}
+```
+
+**Guidelines:**
+- **α = 0.05-0.1**: Conservative, slower convergence but more stable
+- **α = 0.1-0.2**: Default, good balance
+- **α > 0.2**: Aggressive, may be unstable
+
+### Hamming Threshold
+
+The `hammingValue` determines convergence sensitivity:
+
+```{r hamming, cache=TRUE, fig.cap="Effect of convergence threshold"}
+# Test different hamming thresholds
+hammings <- c(0.01, 0.001, 0.0001)
+
+set.seed(123)
+result_h1 <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  gammaValue = 10,
+  alphaValue = 0.1,
+  hammingValue = 0.01,
+  showProgress = FALSE
+)
+
+set.seed(123)
+result_h2 <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  gammaValue = 10,
+  alphaValue = 0.1,
+  hammingValue = 0.001,
+  showProgress = FALSE
+)
+
+# Compare results
+cor_reg <- cor(as.vector(result_h1$regNet), as.vector(result_h2$regNet))
+cat("Correlation between hamming=0.01 and 0.001:", round(cor_reg, 4), "\n")
+```
+
+## Association Methods
+
+SCORPION supports three methods for computing gene co-expression:
+
+### Pearson Correlation (Default)
+
+```{r pearson, cache=TRUE}
+set.seed(123)
+result_pearson <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  assocMethod = "pearson",
+  showProgress = FALSE
+)
+```
+
+### Spearman Correlation
+
+Better for non-linear relationships:
+
+```{r spearman, cache=TRUE}
+set.seed(123)
+result_spearman <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  assocMethod = "spearman",
+  showProgress = FALSE
+)
+```
+
+### Principal Component Regression (pcNet)
+
+Uses PC regression for co-expression estimation:
+
+```{r pcnet, cache=TRUE}
+set.seed(123)
+result_pcnet <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  assocMethod = "pcNet",
+  showProgress = FALSE
+)
+```
+
+### Comparison
+
+```{r compare_methods, fig.cap="Comparison of association methods"}
+par(mfrow = c(1, 3), mar = c(4, 4, 3, 1))
+
+hist(as.vector(result_pearson$regNet), breaks = 50, 
+     main = "Pearson", xlab = "Edge Weight", col = "steelblue")
+
+hist(as.vector(result_spearman$regNet), breaks = 50,
+     main = "Spearman", xlab = "Edge Weight", col = "coral")
+
+hist(as.vector(result_pcnet$regNet), breaks = 50,
+     main = "pcNet", xlab = "Edge Weight", col = "forestgreen")
+```
+
+## Working with Seurat Objects
+
+If you have a Seurat object, extract the expression matrix:
+
+```{r seurat, eval=FALSE}
+# Example with Seurat object
+library(Seurat)
+
+# Extract expression matrix from Seurat v4
+gex_matrix <- GetAssayData(seurat_obj, slot = "counts")
+
+# Or from Seurat v5
+gex_matrix <- seurat_obj[["RNA"]]$counts
+
+# Run SCORPION
+result <- scorpion(
+  tfMotifs = tf_data,
+  gexMatrix = gex_matrix,
+  ppiNet = ppi_data
+)
+```
+
+## Filtering and Preprocessing
+
+### Filter Low-Expression Genes
+
+```{r filter, cache=TRUE}
+# Filter genes before running SCORPION
+set.seed(123)
+result_filtered <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  filterExpr = TRUE,  # Remove zero-expression genes
+  showProgress = FALSE
+)
+
+cat("Genes after filtering:", result_filtered$numGenes, "\n")
+```
+
+### Custom Gene Filtering
+
+```{r custom_filter, cache=TRUE}
+# Manual filtering
+gex <- scorpionTest$gex
+
+# Keep genes expressed in at least 5% of cells
+min_cells <- ncol(gex) * 0.05
+gex_filtered <- gex[Matrix::rowSums(gex > 0) >= min_cells, ]
+
+cat("Original genes:", nrow(scorpionTest$gex), "\n")
+cat("Filtered genes:", nrow(gex_filtered), "\n")
+
+# Run with filtered data
+set.seed(123)
+result_custom <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = gex_filtered,
+  ppiNet = scorpionTest$ppi,
+  showProgress = FALSE
+)
+```
+
+## Parallel Processing
+
+SCORPION supports parallel computation for the pcNet method:
+
+```{r parallel, eval=FALSE}
+# Use multiple cores
+result_parallel <- scorpion(
+  tfMotifs = tf_data,
+  gexMatrix = gex_data,
+  ppiNet = ppi_data,
+  assocMethod = "pcNet",
+  nCores = 4  # Use 4 cores
+)
+```
+
+## Output Analysis
+
+### Network Comparison
+
+Compare networks across conditions:
+
+```{r network_compare, fig.cap="Network comparison across conditions"}
+# Simulate two conditions
+set.seed(123)
+result1 <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  alphaValue = 0.1,
+  showProgress = FALSE
+)
+
+set.seed(456)
+result2 <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  alphaValue = 0.1,
+  showProgress = FALSE
+)
+
+# Compare regulatory networks
+plot(as.vector(result1$regNet), as.vector(result2$regNet),
+     pch = ".", col = adjustcolor("steelblue", 0.3),
+     xlab = "Condition 1", ylab = "Condition 2",
+     main = "Regulatory Network Comparison")
+abline(0, 1, col = "red", lty = 2)
+
+# Correlation
+r <- cor(as.vector(result1$regNet), as.vector(result2$regNet))
+legend("bottomright", paste("r =", round(r, 3)), bty = "n")
+```
+
+### Differential Network Analysis
+
+```{r differential}
+# Compute differential edges
+diff_net <- result1$regNet - result2$regNet
+
+# Find significantly different edges
+threshold <- 2 * sd(diff_net)
+diff_edges <- which(abs(diff_net) > threshold, arr.ind = TRUE)
+
+if(nrow(diff_edges) > 0) {
+  diff_df <- data.frame(
+    TF = rownames(diff_net)[diff_edges[,1]],
+    Gene = colnames(diff_net)[diff_edges[,2]],
+    Difference = diff_net[diff_edges]
+  )
+  diff_df <- diff_df[order(-abs(diff_df$Difference)), ]
+  cat("Top differential edges:\n")
+  head(diff_df, 10)
+}
+```
+
+## Best Practices
+
+### 1. Data Quality
+
+- Remove low-quality cells before running SCORPION
+- Filter genes with very low expression
+- Consider batch effects if analyzing multiple samples
+
+### 2. Prior Network Selection
+
+- Use species-appropriate TF-target databases
+- Higher-confidence PPI scores improve results
+- Consider tissue-specific priors when available
+
+### 3. Parameter Selection
+
+| Dataset Size | Recommended γ | Recommended α |
+|--------------|---------------|---------------|
+| < 1,000 cells | 5-10 | 0.1 |
+| 1,000-10,000 cells | 10-20 | 0.1 |
+| > 10,000 cells | 20-50 | 0.05-0.1 |
+
+### 4. Reproducibility
+
+- Always set a random seed
+- Document all parameter choices
+- Save intermediate results for large analyses
+
+## Session Information
+
+```{r session}
+sessionInfo()
+```

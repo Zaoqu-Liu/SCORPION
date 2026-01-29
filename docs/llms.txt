@@ -1,0 +1,205 @@
+# ![](https://raw.githubusercontent.com/Zaoqu-Liu/SCORPION/main/inst/logoSCORPION.png "SCORPION") SCORPION
+
+## Overview
+
+**SCORPION** (**S**ingle-**C**ell **O**riented **R**econstruction of
+**P**ANDA **I**ndividually **O**ptimized Gene Regulatory **N**etworks)
+is a computational framework for inferring cell-type-specific gene
+regulatory networks (GRNs) from single-cell RNA sequencing (scRNA-seq)
+data.
+
+## Motivation
+
+Single-cell transcriptomics has revolutionized our understanding of
+cellular heterogeneity, yet the inherent sparsity and technical noise in
+scRNA-seq data pose significant challenges for accurate gene regulatory
+network inference. SCORPION addresses these limitations through a
+metacell-based coarse-graining strategy that preserves biological signal
+while reducing technical artifacts.
+
+## Method
+
+SCORPION integrates three complementary data modalities to reconstruct
+transcriptome-wide GRNs:
+
+1.  **Transcription factor (TF) binding motifs** - sequence-based prior
+    knowledge of potential regulatory relationships
+2.  **Protein-protein interactions (PPI)** - physical interactions
+    between transcription factors
+3.  **Gene expression profiles** - cell-type-specific transcriptional
+    states
+
+The algorithm employs the **PANDA** (**P**assing **A**ttributes between
+**N**etworks for **D**ata **A**ssimilation) message-passing framework,
+which iteratively refines network edge weights through Tanimoto
+similarity-based updates until convergence.
+
+![](https://raw.githubusercontent.com/Zaoqu-Liu/SCORPION/main/inst/methodSCORPION.png)
+
+### Key Features
+
+- **Metacell aggregation**: Reduces data sparsity by grouping
+  transcriptionally similar cells using graph-based clustering in PCA
+  space
+- **Multi-modal integration**: Combines transcriptomic data with prior
+  biological knowledge (TF motifs, PPI networks)
+- **Comparable networks**: Generates fully-connected, weighted, and
+  directed GRNs suitable for population-level comparative analyses
+- **Scalable**: Efficient implementation supporting both CPU and GPU
+  computation
+
+## Installation
+
+### From R-universe (Recommended)
+
+``` r
+install.packages("SCORPION", repos = "https://zaoqu-liu.r-universe.dev")
+```
+
+### From CRAN
+
+``` r
+install.packages("SCORPION")
+```
+
+### From GitHub (Development Version)
+
+``` r
+if (!requireNamespace("remotes", quietly = TRUE))
+    install.packages("remotes")
+remotes::install_github("Zaoqu-Liu/SCORPION")
+```
+
+## Quick Start
+
+``` r
+library(SCORPION)
+
+# Load example data
+data(scorpionTest)
+
+# Infer gene regulatory network
+grn <- scorpion(
+    tfMotifs = scorpionTest$tf,      # TF-target motif prior
+    gexMatrix = scorpionTest$gex,    # Gene expression matrix (genes × cells)
+    ppiNet = scorpionTest$ppi,       # Protein-protein interactions
+    alphaValue = 0.1                 # Learning rate (default)
+)
+```
+
+## Input Data Format
+
+| Parameter | Description | Format |
+|----|----|----|
+| `tfMotifs` | TF-target regulatory prior | data.frame with columns: TF, Target, Score |
+| `gexMatrix` | Gene expression matrix | matrix/dgCMatrix (genes × cells) |
+| `ppiNet` | Protein-protein interactions | data.frame with columns: TF1, TF2, Score |
+
+## Output
+
+SCORPION returns a list containing:
+
+| Component  | Description                | Dimensions    |
+|------------|----------------------------|---------------|
+| `regNet`   | TF-gene regulatory network | TFs × Genes   |
+| `coregNet` | Gene co-regulatory network | Genes × Genes |
+| `coopNet`  | TF cooperative network     | TFs × TFs     |
+
+Edge weights represent Z-scores indicating the strength of regulatory
+relationships.
+
+## Example Workflow
+
+``` r
+# Load package and data
+library(SCORPION)
+data(scorpionTest)
+
+# Run SCORPION
+result <- scorpion(
+    tfMotifs = scorpionTest$tf,
+    gexMatrix = scorpionTest$gex,
+    ppiNet = scorpionTest$ppi,
+    gammaValue = 10,        # Metacell graining level
+    nPC = 25,               # Principal components for clustering
+    alphaValue = 0.1,       # Learning rate
+    hammingValue = 0.001    # Convergence threshold
+)
+
+# Examine output
+dim(result$regNet)    # Regulatory network dimensions
+# [1] 783 214
+
+# Extract top regulatory edges
+regNet <- result$regNet
+top_edges <- which(abs(regNet) > 2, arr.ind = TRUE)
+```
+
+## Parameters
+
+| Parameter | Default | Description |
+|----|----|----|
+| `gammaValue` | 10 | Ratio of cells to metacells |
+| `nPC` | 25 | Number of principal components for kNN graph |
+| `alphaValue` | 0.1 | Learning rate for network updates |
+| `hammingValue` | 0.001 | Convergence threshold |
+| `assocMethod` | “pearson” | Association method (“pearson”, “spearman”, “pcNet”) |
+
+## Citation
+
+If you use SCORPION in your research, please cite:
+
+> Osorio, D., Capasso, A., Eckhardt, S. G., Giri, U., Somma, A., Pitts,
+> T. M., … & Kuijjer, M. L. (2023). **Population-level comparisons of
+> gene regulatory networks modeled on high-throughput single-cell
+> transcriptomics data**. *Nature Computational Science*. DOI:
+> [10.1038/s43588-023-00558-w](https://doi.org/10.1038/s43588-023-00558-w)
+
+## Related Resources
+
+- [netZooR](https://github.com/netZoo/netZooR) - Network Zoo package
+  collection
+- [PANDA](https://sites.google.com/a/channing.harvard.edu/kimberlyglass/tools/panda) -
+  Original PANDA algorithm
+
+## Contributing
+
+We welcome contributions! Please submit issues and pull requests on
+[GitHub](https://github.com/Zaoqu-Liu/SCORPION/issues).
+
+## License
+
+GPL-3 © [Zaoqu Liu](https://github.com/Zaoqu-Liu)
+
+# Package index
+
+## Main Functions
+
+Core functions for gene regulatory network inference
+
+- [`scorpion()`](https://zaoqu-liu.github.io/SCORPION/reference/scorpion.md)
+  : Constructs PANDA gene regulatory networks from single-cell gene
+  expression data
+
+## Data
+
+Example datasets
+
+- [`scorpionTest`](https://zaoqu-liu.github.io/SCORPION/reference/scorpionTest.md)
+  : Example single-cell gene expression, motif, and ppi data
+
+# Articles
+
+### Getting Started
+
+- [Quick Start
+  Guide](https://zaoqu-liu.github.io/SCORPION/articles/quick-start.md):
+
+### Deep Dive
+
+- [Algorithm and Mathematical
+  Framework](https://zaoqu-liu.github.io/SCORPION/articles/algorithm.md):
+- [Advanced Usage and Best
+  Practices](https://zaoqu-liu.github.io/SCORPION/articles/advanced-usage.md):
+- [Network
+  Visualization](https://zaoqu-liu.github.io/SCORPION/articles/network-visualization.md):

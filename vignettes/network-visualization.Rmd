@@ -1,0 +1,386 @@
+---
+title: "Network Visualization"
+author: "Zaoqu Liu"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Network Visualization}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Introduction
+
+This vignette demonstrates various approaches for visualizing gene regulatory networks inferred by SCORPION.
+
+```{r load}
+library(SCORPION)
+library(Matrix)
+library(igraph)
+```
+
+## Running SCORPION
+
+```{r run, cache=TRUE}
+data(scorpionTest)
+set.seed(123)
+
+result <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  gammaValue = 10,
+  alphaValue = 0.1,
+  showProgress = FALSE
+)
+```
+
+## Network Statistics Visualization
+
+### Edge Weight Distribution
+
+```{r edge_dist, fig.cap="Distribution of edge weights in SCORPION networks"}
+par(mfrow = c(1, 3), mar = c(4, 4, 3, 1))
+
+# Regulatory network
+hist(as.vector(result$regNet), breaks = 50, 
+     main = "Regulatory Network", 
+     xlab = "Edge Weight (Z-score)",
+     col = "#3498db", border = "white")
+abline(v = c(-2, 2), col = "red", lty = 2, lwd = 2)
+
+# Co-regulatory network
+hist(as.vector(result$coregNet), breaks = 50,
+     main = "Co-regulatory Network",
+     xlab = "Edge Weight",
+     col = "#2ecc71", border = "white")
+
+# Cooperative network
+hist(as.vector(result$coopNet), breaks = 50,
+     main = "Cooperative Network",
+     xlab = "Edge Weight", 
+     col = "#e74c3c", border = "white")
+```
+
+### TF Targeting Statistics
+
+```{r tf_stats, fig.cap="Distribution of TF out-degrees"}
+# Calculate TF out-degrees (number of targets per TF)
+regNet <- result$regNet
+tf_outdegree <- rowSums(abs(regNet) > 2)  # Significant edges only
+
+# Plot
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+
+hist(tf_outdegree, breaks = 30,
+     main = "TF Out-Degree Distribution",
+     xlab = "Number of Target Genes",
+     col = "#9b59b6", border = "white")
+
+# Top TFs by number of targets
+top_tfs <- sort(tf_outdegree, decreasing = TRUE)[1:20]
+barplot(top_tfs, las = 2, col = "#9b59b6",
+        main = "Top 20 TFs by Number of Targets",
+        ylab = "Number of Targets", cex.names = 0.7)
+```
+
+## Heatmap Visualization
+
+### Regulatory Network Heatmap
+
+```{r heatmap_reg, fig.cap="Regulatory network heatmap (top TFs and genes)", fig.height=8}
+# Select top TFs and genes for visualization
+top_n <- 30
+
+# Top TFs by variance
+tf_var <- apply(regNet, 1, var)
+top_tf_idx <- order(tf_var, decreasing = TRUE)[1:top_n]
+
+# Top genes by variance
+gene_var <- apply(regNet, 2, var)
+top_gene_idx <- order(gene_var, decreasing = TRUE)[1:top_n]
+
+# Subset network
+subnet <- regNet[top_tf_idx, top_gene_idx]
+
+# Create heatmap
+heatmap(as.matrix(subnet), 
+        col = colorRampPalette(c("#2980b9", "white", "#c0392b"))(100),
+        scale = "none",
+        main = "Top TF-Gene Regulatory Relationships",
+        margins = c(8, 8),
+        cexRow = 0.6, cexCol = 0.6)
+```
+
+### TF Cooperation Heatmap
+
+```{r heatmap_coop, fig.cap="TF cooperation network heatmap"}
+# Select top cooperating TFs
+coopNet <- result$coopNet
+diag(coopNet) <- 0
+
+tf_coop_degree <- rowSums(abs(coopNet) > quantile(abs(coopNet), 0.95))
+top_coop_idx <- order(tf_coop_degree, decreasing = TRUE)[1:min(40, nrow(coopNet))]
+
+coop_subnet <- coopNet[top_coop_idx, top_coop_idx]
+
+heatmap(as.matrix(coop_subnet),
+        col = colorRampPalette(c("#27ae60", "white", "#e74c3c"))(100),
+        scale = "none", symm = TRUE,
+        main = "TF Cooperation Network",
+        margins = c(8, 8),
+        cexRow = 0.6, cexCol = 0.6)
+```
+
+## Network Graph Visualization
+
+### Building igraph Network
+
+```{r build_graph}
+# Create edge list from regulatory network
+threshold <- 2  # Z-score threshold
+
+edges <- which(abs(regNet) > threshold, arr.ind = TRUE)
+if(nrow(edges) > 0) {
+  edge_df <- data.frame(
+    from = rownames(regNet)[edges[,1]],
+    to = colnames(regNet)[edges[,2]],
+    weight = regNet[edges],
+    stringsAsFactors = FALSE
+  )
+  
+  # Limit to top edges for visualization
+  edge_df <- edge_df[order(-abs(edge_df$weight)), ]
+  edge_df <- head(edge_df, 200)
+  
+  # Create igraph object (without weight attribute for layout compatibility)
+  g <- graph_from_data_frame(edge_df[, c("from", "to")], directed = TRUE)
+  
+  # Node attributes
+  V(g)$type <- ifelse(V(g)$name %in% rownames(regNet), "TF", "Gene")
+  V(g)$color <- ifelse(V(g)$type == "TF", "#e74c3c", "#3498db")
+  V(g)$size <- ifelse(V(g)$type == "TF", 8, 5)
+  
+  # Edge attributes (store original weight for coloring)
+  E(g)$orig_weight <- edge_df$weight
+  E(g)$color <- ifelse(edge_df$weight > 0, "#27ae60", "#c0392b")
+  E(g)$width <- abs(edge_df$weight) / max(abs(edge_df$weight)) * 2 + 0.5
+  
+  cat("Network has", vcount(g), "nodes and", ecount(g), "edges\n")
+} else {
+  cat("No significant edges found with threshold =", threshold, "\n")
+}
+```
+
+### Network Layout and Plotting
+
+```{r plot_network, fig.cap="Gene regulatory network visualization", fig.width=10, fig.height=10}
+if(exists("g") && vcount(g) > 0) {
+  # Use layout without weight dependency
+  set.seed(42)
+  layout <- layout_nicely(g)
+  
+  # Plot
+  par(mar = c(0, 0, 2, 0))
+  plot(g, 
+       layout = layout,
+       vertex.label = ifelse(degree(g) > 5, V(g)$name, NA),
+       vertex.label.cex = 0.6,
+       vertex.label.color = "black",
+       vertex.frame.color = NA,
+       edge.arrow.size = 0.3,
+       main = "SCORPION Gene Regulatory Network")
+  
+  legend("bottomleft", 
+         legend = c("TF", "Gene", "Activation", "Repression"),
+         col = c("#e74c3c", "#3498db", "#27ae60", "#c0392b"),
+         pch = c(19, 19, NA, NA),
+         lty = c(NA, NA, 1, 1),
+         lwd = 2, bty = "n")
+} else {
+  plot.new()
+  text(0.5, 0.5, "No network to display", cex = 1.5)
+}
+```
+
+### Subnetwork for Specific TF
+
+```{r tf_subnetwork, fig.cap="Subnetwork for a specific TF"}
+if(exists("g") && vcount(g) > 0) {
+  # Select a TF with many targets
+  tf_degrees <- degree(g, mode = "out")
+  tf_names <- names(tf_degrees)[tf_degrees > 0]
+  
+  if(length(tf_names) > 0) {
+    # Select top TF
+    top_tf <- tf_names[which.max(tf_degrees[tf_names])]
+    
+    # Get neighbors
+    neighbors_idx <- neighbors(g, top_tf, mode = "out")
+    subgraph_nodes <- c(top_tf, names(neighbors_idx))
+    
+    if(length(subgraph_nodes) > 1) {
+      # Create subgraph
+      subg <- induced_subgraph(g, subgraph_nodes)
+      
+      # Plot
+      par(mar = c(0, 0, 2, 0))
+      plot(subg,
+           layout = layout_as_star(subg, center = top_tf),
+           vertex.label.cex = 0.8,
+           vertex.label.color = "black",
+           vertex.frame.color = NA,
+           edge.arrow.size = 0.5,
+           main = paste("Target genes of", top_tf))
+    }
+  }
+} else {
+  plot.new()
+  text(0.5, 0.5, "No network to display", cex = 1.5)
+}
+```
+
+## Circular Network Plot
+
+```{r circular, fig.cap="Circular network visualization", fig.width=10, fig.height=10}
+if(exists("edge_df") && nrow(edge_df) > 0) {
+  # Create simplified network for circular layout
+  edge_df_simple <- head(edge_df[order(-abs(edge_df$weight)), ], 100)
+  g_simple <- graph_from_data_frame(edge_df_simple, directed = TRUE)
+  
+  V(g_simple)$type <- ifelse(V(g_simple)$name %in% rownames(regNet), "TF", "Gene")
+  V(g_simple)$color <- ifelse(V(g_simple)$type == "TF", "#e74c3c", "#3498db")
+  
+  # Order nodes: TFs first, then genes
+  node_order <- order(V(g_simple)$type, decreasing = TRUE)
+  g_simple <- permute(g_simple, node_order)
+  
+  # Circular layout
+  par(mar = c(0, 0, 2, 0))
+  plot(g_simple,
+       layout = layout_in_circle(g_simple),
+       vertex.size = 6,
+       vertex.label.cex = 0.5,
+       vertex.label.dist = 1,
+       vertex.frame.color = NA,
+       edge.arrow.size = 0.2,
+       edge.curved = 0.2,
+       main = "Circular Network Layout")
+} else {
+  plot.new()
+  text(0.5, 0.5, "No network to display", cex = 1.5)
+}
+```
+
+## Network Centrality Analysis
+
+```{r centrality, fig.cap="Network centrality measures"}
+if(exists("g") && vcount(g) > 0) {
+  # Calculate centrality measures
+  deg_in <- degree(g, mode = "in")
+  deg_out <- degree(g, mode = "out")
+  between <- betweenness(g)
+  pr <- page_rank(g)$vector
+  
+  # Create summary
+  centrality_df <- data.frame(
+    Node = V(g)$name,
+    Type = V(g)$type,
+    InDegree = deg_in,
+    OutDegree = deg_out,
+    Betweenness = between,
+    PageRank = pr
+  )
+  
+  # Top nodes by different measures
+  par(mfrow = c(2, 2), mar = c(8, 4, 3, 1))
+  
+  # Top by in-degree (most regulated genes)
+  top_in <- head(centrality_df[order(-centrality_df$InDegree), ], 15)
+  if(nrow(top_in) > 0) {
+    barplot(top_in$InDegree, names.arg = top_in$Node, las = 2, 
+            col = "#3498db", main = "Top Regulated Genes",
+            ylab = "In-Degree", cex.names = 0.7)
+  }
+  
+  # Top by out-degree (most active TFs)
+  top_out <- head(centrality_df[order(-centrality_df$OutDegree), ], 15)
+  if(nrow(top_out) > 0) {
+    barplot(top_out$OutDegree, names.arg = top_out$Node, las = 2,
+            col = "#e74c3c", main = "Most Active TFs",
+            ylab = "Out-Degree", cex.names = 0.7)
+  }
+  
+  # Top by betweenness
+  top_bet <- head(centrality_df[order(-centrality_df$Betweenness), ], 15)
+  if(nrow(top_bet) > 0) {
+    barplot(top_bet$Betweenness, names.arg = top_bet$Node, las = 2,
+            col = "#9b59b6", main = "Hub Nodes (Betweenness)",
+            ylab = "Betweenness", cex.names = 0.7)
+  }
+  
+  # Top by PageRank
+  top_pr <- head(centrality_df[order(-centrality_df$PageRank), ], 15)
+  if(nrow(top_pr) > 0) {
+    barplot(top_pr$PageRank, names.arg = top_pr$Node, las = 2,
+            col = "#f39c12", main = "Important Nodes (PageRank)",
+            ylab = "PageRank", cex.names = 0.7)
+  }
+} else {
+  par(mfrow = c(1, 1))
+  plot.new()
+  text(0.5, 0.5, "No network to display", cex = 1.5)
+}
+```
+
+## Exporting Networks
+
+### Export to Cytoscape
+
+```{r export_cytoscape, eval=FALSE}
+# Export edge list for Cytoscape
+write.csv(edge_df, "scorpion_network.csv", row.names = FALSE)
+
+# Export node attributes
+node_attrs <- data.frame(
+  Node = c(rownames(regNet), colnames(regNet)),
+  Type = c(rep("TF", nrow(regNet)), rep("Gene", ncol(regNet)))
+)
+write.csv(node_attrs, "scorpion_nodes.csv", row.names = FALSE)
+```
+
+### Export to GraphML
+
+```{r export_graphml, eval=FALSE}
+# Export as GraphML for Cytoscape/Gephi
+write_graph(g, "scorpion_network.graphml", format = "graphml")
+```
+
+## Summary
+
+Key visualization approaches for SCORPION networks:
+
+1. **Heatmaps**: Good for showing global patterns
+2. **Network graphs**: Show topology and hub nodes
+3. **Centrality plots**: Identify key regulators
+4. **Subnetworks**: Focus on specific TFs or pathways
+
+## Session Information
+
+```{r session}
+sessionInfo()
+```

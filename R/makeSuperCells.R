@@ -212,55 +212,9 @@ makeSuperCells <- function(X,
     igraph::simplify(SC.NW, remove.loops = T, edge.attr.comb = "sum")
 
   if (do.approx) {
-    # PCA.averaged.SC      <-
-    #   as.matrix(Matrix::t(supercell_GE(t(
-    #     PCA.presampled$x[, n.pc]
-    #   ), groups = membership.presampled)))
-    # X.for.roration       <- Matrix::t(X[genes.use, rest.cell.ids])
-    #
-    #
-    #
-    # if (do.scale) {
-    #   X.for.roration <- scale(X.for.roration)
-    # }
-    # X.for.roration[is.na(X.for.roration)] <- 0
-    #
-    #
-    # membership.omitted   <- c()
-    # if (is.null(block.size) | is.na(block.size))
-    #   block.size <- 10000
-    #
-    # N.blocks <- length(rest.cell.ids) %/% block.size
-    # if (length(rest.cell.ids) %% block.size > 0)
-    #   N.blocks <- N.blocks + 1
-    #
-    #
-    # if (N.blocks > 0) {
-    #   for (i in 1:N.blocks) {
-    #     # compute knn by blocks
-    #     idx.begin <- (i - 1) * block.size + 1
-    #     idx.end   <- min(i * block.size,  length(rest.cell.ids))
-    #
-    #     cur.rest.cell.ids    <- rest.cell.ids[idx.begin:idx.end]
-    #
-    #     PCA.ommited          <-
-    #       X.for.roration[cur.rest.cell.ids, ] %*% PCA.presampled$rotation[, n.pc] ###
-    #
-    #     D.omitted.subsampled <-
-    #       proxy::dist(PCA.ommited, PCA.averaged.SC) ###
-    #
-    #     membership.omitted.cur        <-
-    #       apply(D.omitted.subsampled, 1, which.min) ###
-    #     names(membership.omitted.cur) <- cur.rest.cell.ids ###
-    #
-    #     membership.omitted   <-
-    #       c(membership.omitted, membership.omitted.cur)
-    #   }
-    # }
-    #
-    # membership.all       <-
-    #   c(membership.presampled, membership.omitted)
-    # membership.all       <- membership.all[colnames(X)]
+    # Approximate mode not fully implemented yet
+    # Using presampled membership as fallback
+    membership.all <- membership.presampled[colnames(X)]
   } else {
     membership.all <- membership.presampled[colnames(X)]
   }

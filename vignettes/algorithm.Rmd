@@ -1,0 +1,251 @@
+---
+title: "Algorithm and Mathematical Framework"
+author: "Zaoqu Liu"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Algorithm and Mathematical Framework}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Overview
+
+SCORPION implements the **PANDA** (Passing Attributes between Networks for Data Assimilation) algorithm, adapted for single-cell data through metacell aggregation. This vignette explains the mathematical framework underlying the algorithm.
+
+## The PANDA Algorithm
+
+### Core Concept
+
+PANDA is a message-passing algorithm that integrates multiple data sources to infer gene regulatory networks. It iteratively updates three networks:
+
+1. **Regulatory Network (W)**: TF → Gene relationships
+2. **Co-regulatory Network (C)**: Gene-Gene co-expression patterns  
+3. **Cooperative Network (P)**: TF-TF cooperation patterns
+
+### Mathematical Formulation
+
+#### 1. Tanimoto Similarity
+
+The core of PANDA is the Tanimoto similarity function, which measures the overlap between network neighborhoods:
+
+$$T(X, Y) = \frac{XY^T}{\sqrt{\|X\|^2 + \|Y\|^2 - |XY^T|}}$$
+
+where:
+- $X$ and $Y$ are network matrices
+- $\|\cdot\|$ denotes the Frobenius norm
+
+```{r tanimoto, echo=FALSE, fig.cap="Illustration of Tanimoto similarity between networks"}
+library(SCORPION)
+
+# Simple visualization of Tanimoto concept
+set.seed(42)
+n <- 5
+X <- matrix(runif(n*n, -1, 1), n, n)
+Y <- matrix(runif(n*n, -1, 1), n, n)
+
+par(mfrow = c(1, 3), mar = c(2, 2, 3, 1))
+
+# Network X
+image(X, main = "Network X", col = colorRampPalette(c("blue", "white", "red"))(100),
+      axes = FALSE)
+box()
+
+# Network Y  
+image(Y, main = "Network Y", col = colorRampPalette(c("blue", "white", "red"))(100),
+      axes = FALSE)
+box()
+
+# Similarity
+sim <- X %*% t(Y)
+image(sim, main = "Tanimoto Similarity", col = colorRampPalette(c("blue", "white", "red"))(100),
+      axes = FALSE)
+box()
+```
+
+#### 2. Network Update Rules
+
+At each iteration $t$, the networks are updated as follows:
+
+**Responsibility** (how well TFs explain gene expression):
+$$R_t = T(P_t, W_t)$$
+
+**Availability** (how well genes are co-regulated):
+$$A_t = T(W_t, C_t)$$
+
+**Regulatory network update**:
+$$W_{t+1} = (1-\alpha)W_t + \alpha \cdot \frac{R_t + A_t}{2}$$
+
+**Cooperative network update**:
+$$P_{t+1} = (1-\alpha)P_t + \alpha \cdot T(W_t, W_t^T)$$
+
+**Co-regulatory network update**:
+$$C_{t+1} = (1-\alpha)C_t + \alpha \cdot T(W_t^T, W_t)$$
+
+where $\alpha$ is the learning rate.
+
+### Convergence Criterion
+
+The algorithm converges when the Hamming distance between consecutive regulatory networks falls below a threshold:
+
+$$H_t = \frac{1}{n_{TF} \times n_{gene}} \sum_{i,j} |W_t^{(i,j)} - W_{t-1}^{(i,j)}|$$
+
+```{r convergence, fig.cap="Convergence of PANDA algorithm"}
+# Run SCORPION and track convergence
+data(scorpionTest)
+set.seed(123)
+
+# Run with high hamming to see more iterations
+result <- scorpion(
+  tfMotifs = scorpionTest$tf,
+  gexMatrix = scorpionTest$gex,
+  ppiNet = scorpionTest$ppi,
+  gammaValue = 10,
+  alphaValue = 0.1,
+  hammingValue = 0.001,
+  showProgress = FALSE
+)
+
+# Simulated convergence curve for illustration
+iterations <- 0:10
+hamming <- 1 * exp(-0.8 * iterations)
+
+plot(iterations, hamming, type = "b", pch = 19, col = "steelblue",
+     xlab = "Iteration", ylab = "Hamming Distance",
+     main = "PANDA Convergence", ylim = c(0, 1))
+abline(h = 0.001, col = "red", lty = 2)
+text(8, 0.05, "Threshold = 0.001", col = "red")
+```
+
+## Metacell Aggregation
+
+### The Sparsity Problem
+
+Single-cell RNA-seq data is inherently sparse due to:
+- Technical dropout events
+- Low capture efficiency
+- Biological variability
+
+### Solution: Metacells
+
+SCORPION addresses sparsity by aggregating similar cells into "metacells":
+
+1. **PCA dimensionality reduction** on variable genes
+2. **k-NN graph construction** in PCA space
+3. **Walktrap clustering** to identify cell communities
+4. **Expression averaging** within clusters
+
+```{r metacell, fig.cap="Metacell aggregation concept"}
+# Illustration of metacell concept
+set.seed(42)
+n_cells <- 100
+n_genes <- 50
+
+# Simulated single-cell data (sparse)
+sc_data <- matrix(rpois(n_cells * n_genes, lambda = 0.5), n_genes, n_cells)
+sc_data[sc_data > 3] <- 3
+
+# Simulated metacell data (denser)
+n_metacells <- 10
+mc_data <- matrix(rpois(n_metacells * n_genes, lambda = 5), n_genes, n_metacells)
+
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+
+# Single-cell heatmap
+image(t(sc_data), main = paste0("Single-cell (", n_cells, " cells)"),
+      col = colorRampPalette(c("white", "navy"))(100),
+      xlab = "Cells", ylab = "Genes", axes = FALSE)
+mtext(paste0("Sparsity: ", round(100*mean(sc_data == 0), 1), "%"), side = 1, line = 2.5)
+
+# Metacell heatmap  
+image(t(mc_data), main = paste0("Metacells (", n_metacells, " metacells)"),
+      col = colorRampPalette(c("white", "navy"))(100),
+      xlab = "Metacells", ylab = "Genes", axes = FALSE)
+mtext(paste0("Sparsity: ", round(100*mean(mc_data == 0), 1), "%"), side = 1, line = 2.5)
+```
+
+### Gamma Parameter
+
+The `gammaValue` parameter controls the aggregation level:
+
+$$\gamma = \frac{n_{cells}}{n_{metacells}}$$
+
+- Higher γ = More aggregation, less sparsity, lower resolution
+- Lower γ = Less aggregation, more sparsity, higher resolution
+
+## Network Normalization
+
+### Double Z-score Normalization
+
+Before message passing, all networks are normalized using a double Z-score approach:
+
+$$Z = \frac{Z_{row} + Z_{col}}{\sqrt{2}}$$
+
+where:
+$$Z_{row} = \frac{X - \mu_{row}}{\sigma_{row}}$$
+$$Z_{col} = \frac{X - \mu_{col}}{\sigma_{col}}$$
+
+This ensures that both row-wise (TF) and column-wise (gene) statistics are considered.
+
+```{r normalize, fig.cap="Effect of double Z-score normalization"}
+# Illustration of normalization effect
+set.seed(42)
+raw <- matrix(rnorm(100, mean = 5, sd = 2), 10, 10)
+raw[1:3, ] <- raw[1:3, ] + 10  # Add row bias
+
+# Row-wise z-score
+z_row <- t(scale(t(raw)))
+
+# Column-wise z-score  
+z_col <- scale(raw)
+
+# Double z-score
+z_double <- (z_row + z_col) / sqrt(2)
+
+par(mfrow = c(2, 2), mar = c(2, 2, 3, 1))
+image(raw, main = "Raw Matrix", col = colorRampPalette(c("blue", "white", "red"))(100), axes = FALSE)
+image(z_row, main = "Row Z-score", col = colorRampPalette(c("blue", "white", "red"))(100), axes = FALSE)
+image(z_col, main = "Column Z-score", col = colorRampPalette(c("blue", "white", "red"))(100), axes = FALSE)
+image(z_double, main = "Double Z-score", col = colorRampPalette(c("blue", "white", "red"))(100), axes = FALSE)
+```
+
+## Computational Complexity
+
+| Operation | Complexity |
+|-----------|------------|
+| Tanimoto similarity | O(n²m) |
+| Network update | O(n²m) |
+| Total per iteration | O(n²m) |
+| Metacell aggregation | O(c × g) |
+
+Where:
+- n = number of TFs
+- m = number of genes
+- c = number of cells
+- g = number of genes used for PCA
+
+## References
+
+1. Glass, K., et al. (2013). Passing Messages between Biological Networks to Refine Predicted Interactions. *PLoS ONE*.
+
+2. Osorio, D., et al. (2023). Population-level comparisons of gene regulatory networks modeled on high-throughput single-cell transcriptomics data. *Nature Computational Science*.
+
+## Session Information
+
+```{r session}
+sessionInfo()
+```

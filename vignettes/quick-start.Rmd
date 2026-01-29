@@ -1,0 +1,138 @@
+---
+title: "Quick Start Guide"
+author: "Zaoqu Liu"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Quick Start Guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Introduction
+
+**SCORPION** (Single-Cell Oriented Reconstruction of PANDA Individually Optimized Networks) is a computational framework for inferring cell-type-specific gene regulatory networks (GRNs) from single-cell RNA sequencing data.
+
+This vignette provides a quick introduction to using SCORPION for gene regulatory network inference.
+
+## Installation
+
+```{r install, eval=FALSE}
+# From R-universe (Recommended)
+install.packages("SCORPION", repos = "https://zaoqu-liu.r-universe.dev")
+
+# From GitHub
+remotes::install_github("Zaoqu-Liu/SCORPION")
+```
+
+## Loading the Package
+
+```{r load}
+library(SCORPION)
+library(Matrix)
+```
+
+## Example Data
+
+SCORPION comes with example data consisting of:
+
+- **Gene expression matrix**: A sparse matrix with genes as rows and cells as columns
+- **TF-target motif prior**: A data frame describing transcription factor binding sites
+- **Protein-protein interactions**: A data frame of known TF-TF interactions
+
+```{r data}
+# Load example data
+data(scorpionTest)
+
+# Examine the structure
+cat("Gene expression matrix:", nrow(scorpionTest$gex), "genes x", 
+    ncol(scorpionTest$gex), "cells\n")
+cat("TF-target motif edges:", nrow(scorpionTest$tf), "\n")
+cat("Protein-protein interactions:", nrow(scorpionTest$ppi), "\n")
+```
+
+## Running SCORPION
+
+The main function `scorpion()` takes three inputs and returns three networks:
+
+```{r run, cache=TRUE}
+# Run SCORPION
+set.seed(123)
+result <- scorpion(
+  tfMotifs = scorpionTest$tf,      # TF-target motif prior
+  gexMatrix = scorpionTest$gex,    # Gene expression matrix
+  ppiNet = scorpionTest$ppi,       # Protein-protein interactions
+  gammaValue = 10,                 # Metacell aggregation ratio
+  alphaValue = 0.1,                # Learning rate
+  hammingValue = 0.001             # Convergence threshold
+)
+```
+
+## Output Structure
+
+SCORPION returns a list containing:
+
+```{r output}
+# Network dimensions
+cat("Regulatory network:", dim(result$regNet)[1], "TFs x", 
+    dim(result$regNet)[2], "genes\n")
+cat("Co-regulatory network:", dim(result$coregNet)[1], "x", 
+    dim(result$coregNet)[2], "genes\n")
+cat("Cooperative network:", dim(result$coopNet)[1], "x", 
+    dim(result$coopNet)[2], "TFs\n")
+
+# Summary statistics
+cat("\nNumber of genes:", result$numGenes, "\n")
+cat("Number of TFs:", result$numTFs, "\n")
+cat("Number of edges:", result$numEdges, "\n")
+```
+
+## Extracting Top Regulatory Edges
+
+```{r top_edges}
+# Get regulatory network
+regNet <- result$regNet
+
+# Find top positive regulators
+top_edges <- which(regNet > 2, arr.ind = TRUE)
+if(nrow(top_edges) > 0) {
+  top_df <- data.frame(
+    TF = rownames(regNet)[top_edges[,1]],
+    Gene = colnames(regNet)[top_edges[,2]],
+    Score = regNet[top_edges]
+  )
+  top_df <- top_df[order(-top_df$Score), ]
+  head(top_df, 10)
+}
+```
+
+## Visualizing Network Statistics
+
+```{r viz, fig.cap="Distribution of regulatory edge weights"}
+# Edge weight distribution
+hist(as.vector(result$regNet), breaks = 50, 
+     main = "Distribution of Regulatory Edge Weights",
+     xlab = "Edge Weight (Z-score)", 
+     col = "steelblue", border = "white")
+abline(v = c(-2, 2), col = "red", lty = 2)
+```
+
+## Session Information
+
+```{r session}
+sessionInfo()
+```

@@ -1,4 +1,6 @@
-# <img src="https://raw.githubusercontent.com/Zaoqu-Liu/SCORPION/main/inst/logoSCORPION.png" width="30" title="SCORPION"> SCORPION
+# <img src="https://raw.githubusercontent.com/Zaoqu-Liu/SCORPION/main/inst/logoSCORPION.png" width="30" alt="SCORPION logo"> SCORPION
+
+**Documentation**: <https://zaoqu-liu.github.io/SCORPION/>
 
 <!-- badges: start -->
 [![R-universe](https://zaoqu-liu.r-universe.dev/badges/SCORPION)](https://zaoqu-liu.r-universe.dev/SCORPION)
@@ -26,7 +28,7 @@ SCORPION integrates three complementary data modalities to reconstruct transcrip
 The algorithm employs the **PANDA** (**P**assing **A**ttributes between **N**etworks for **D**ata **A**ssimilation) message-passing framework, which iteratively refines network edge weights through Tanimoto similarity-based updates until convergence.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Zaoqu-Liu/SCORPION/main/inst/methodSCORPION.png" width="800">
+  <img src="https://raw.githubusercontent.com/Zaoqu-Liu/SCORPION/main/inst/methodSCORPION.png" width="800" alt="SCORPION method overview showing the PANDA message-passing algorithm for gene regulatory network inference">
 </p>
 
 ### Key Features

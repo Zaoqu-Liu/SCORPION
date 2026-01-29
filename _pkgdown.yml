@@ -1,0 +1,75 @@
+url: https://zaoqu-liu.github.io/SCORPION/
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    primary: "#0d6efd"
+
+home:
+  title: SCORPION - Single-Cell Gene Regulatory Network Inference
+  description: >
+    Constructs gene regulatory networks from single-cell RNA-seq data 
+    using the PANDA algorithm with metacell aggregation.
+
+authors:
+  Zaoqu Liu:
+    href: https://github.com/Zaoqu-Liu
+  Daniel Osorio:
+    href: https://github.com/dosorio
+  Marieke L. Kuijjer:
+    href: https://github.com/kuijjerlab
+
+navbar:
+  structure:
+    left:  [intro, reference, articles]
+    right: [search, github]
+  components:
+    intro:
+      text: Get Started
+      href: articles/quick-start.html
+    articles:
+      text: Articles
+      menu:
+        - text: Quick Start Guide
+          href: articles/quick-start.html
+        - text: Algorithm & Mathematics
+          href: articles/algorithm.html
+        - text: Advanced Usage
+          href: articles/advanced-usage.html
+        - text: Network Visualization
+          href: articles/network-visualization.html
+    github:
+      icon: fab fa-github
+      href: https://github.com/Zaoqu-Liu/SCORPION
+      aria-label: GitHub
+
+reference:
+  - title: Main Functions
+    desc: Core functions for gene regulatory network inference
+    contents:
+      - scorpion
+  - title: Data
+    desc: Example datasets
+    contents:
+      - scorpionTest
+
+articles:
+  - title: Getting Started
+    navbar: ~
+    contents:
+      - quick-start
+  - title: Deep Dive
+    navbar: Articles
+    contents:
+      - algorithm
+      - advanced-usage
+      - network-visualization
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
+  components:
+    developed_by: >
+      Developed by [Zaoqu Liu](https://github.com/Zaoqu-Liu)
