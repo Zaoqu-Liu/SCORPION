@@ -23,7 +23,11 @@ Imports:
     igraph,
     RANN,
     Matrix,
-    pbapply
+    pbapply,
+    Rcpp
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
 Suggests: 
     RhpcBLASctl,
     gpuR,

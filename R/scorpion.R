@@ -1,4 +1,6 @@
 #' @importFrom Matrix Matrix
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib SCORPION, .registration = TRUE
 #' @export scorpion
 #' @title Constructs PANDA gene regulatory networks from single-cell gene expression data
 #' @description  Constructs gene regulatory networks from single-cell gene expression data using the PANDA (Passing Attributes between Networks for Data Assimilation) algorithm.
