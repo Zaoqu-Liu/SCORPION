@@ -19,7 +19,7 @@
 #' @param showProgress Boolean to indicate printing of output for algorithm progress.
 #' @param randomizationMethod Method by which to randomize gene expression matrix. Default "None". Must be one of "None", "within.gene", "by.genes". "within.gene" randomization scrambles each row of the gene expression matrix, "by.gene" scrambles gene labels.
 #' @param scaleByPresent Boolean to indicate scaling of correlations by percentage of positive samples.
-#' @param filterExpr Boolean to indicate wheter or not to remove genes with 0 expression across all cells from the GEX input.
+#' @param filterExpr Boolean to indicate whether or not to remove genes with 0 expression across all cells from the GEX input.
 #' @return A list of matrices describing networks achieved by convergence with PANDA algorithm.
 #' @examples
 #' # Loading example data

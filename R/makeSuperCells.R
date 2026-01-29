@@ -117,7 +117,7 @@ makeSuperCells <- function(X,
 
   if (do.approx & ((N.c / gamma) > (approx.N / 3))) {
     warning(
-      "N.approx is not much larger than desired number of super-cells, so an approximate simplification may take londer than an exact one!"
+      "N.approx is not much larger than desired number of super-cells, so an approximate simplification may take longer than an exact one!"
     )
   }
 

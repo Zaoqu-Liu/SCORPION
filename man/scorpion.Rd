@@ -57,7 +57,7 @@ scorpion(
 
 \item{scaleByPresent}{Boolean to indicate scaling of correlations by percentage of positive samples.}
 
-\item{filterExpr}{Boolean to indicate wheter or not to remove genes with 0 expression across all cells from the GEX input.}
+\item{filterExpr}{Boolean to indicate whether or not to remove genes with 0 expression across all cells from the GEX input.}
 }
 \value{
 A list of matrices describing networks achieved by convergence with PANDA algorithm.
@@ -135,5 +135,5 @@ str(scorpionOutput)
 # $ numEdges: int 167562
 }
 \author{
-Daniel Osorio <daniecos@uio.no>
+Zaoqu Liu <liuzaoqu@163.com>, Daniel Osorio <daniecos@uio.no>
 }

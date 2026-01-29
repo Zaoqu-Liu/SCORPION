@@ -20,7 +20,7 @@ buildKNND <- function(D, k = 5, return_neighbors_order = TRUE, mode = "all") {
   N <- (1 + sqrt(1 + 8 * length(D))) / 2 # number of cells
 
   if (k >= N) {
-    stop("Not enought neighbors in data set!")
+    stop("Not enough neighbors in data set!")
   }
   if (k < 1) {
     stop("Invalid number of nearest neighbors, k must be >= 1!")
