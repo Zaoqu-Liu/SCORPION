@@ -5,6 +5,7 @@
 #' @param mode Graph mode for igraph
 #' @return A list containing the kNN graph
 #' @importFrom methods is
+#' @importFrom igraph E E<-
 #' @noRd
 buildKNND <- function(D, k = 5, return_neighbors_order = TRUE, mode = "all") {
   if (!is(D, "matrix") & !is(D, "dist")) {

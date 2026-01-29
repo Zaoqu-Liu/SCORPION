@@ -54,7 +54,7 @@ pcNet <- function(X,
       cl <- parallel::makeCluster(nCores)
       on.exit(parallel::stopCluster(cl), add = TRUE)
       parallel::clusterExport(cl, c("X", "nComp"), envir = environment())
-      parallel::clusterEvalQ(cl, library(irlba))
+      parallel::clusterEvalQ(cl, requireNamespace("irlba", quietly = TRUE))
       B <- if (verbose) {
         pbapply::pbsapply(seq_len(n), pcCoefficients, cl = cl)
       } else {
