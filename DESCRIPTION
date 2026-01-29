@@ -1,7 +1,7 @@
 Package: SCORPION
 Type: Package
 Title: Single Cell Oriented Reconstruction of PANDA Individual Optimized Networks
-Version: 1.2.1
+Version: 1.2.2
 Authors@R: c(
     person("Zaoqu", "Liu", email = "liuzaoqu@163.com", role = c("aut", "cre"), 
            comment = c(ORCID = "0000-0002-0452-742X")),

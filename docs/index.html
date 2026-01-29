@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">SCORPION</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,12 +67,13 @@
 <div class="section level2">
 <h2 id="whats-new-tada">What’s New 🎉<a class="anchor" aria-label="anchor" href="#whats-new-tada"></a>
 </h2>
-<p><strong>v1.2.1</strong> (January 2026)</p>
+<p><strong>v1.2.2</strong> (January 2026)</p>
 <ul>
+<li>🚀 <strong>RcppArmadillo acceleration</strong>: C++ implementation of core algorithms with BLAS optimization (~2.5x faster)</li>
 <li>📚 <strong>Documentation website</strong>: Full pkgdown site with tutorials at <a href="https://zaoqu-liu.github.io/SCORPION/" class="uri">https://zaoqu-liu.github.io/SCORPION/</a>
 </li>
 <li>📖 <strong>Vignettes</strong>: 4 comprehensive guides (Quick Start, Algorithm, Advanced Usage, Visualization)</li>
-<li>⚡ <strong>Performance</strong>: Vectorized operations for improved speed</li>
+<li>⚡ <strong>Performance</strong>: Vectorized operations + optimized BLAS for matrix computation</li>
 <li>🛡️ <strong>Robustness</strong>: Enhanced numerical stability in Tanimoto similarity</li>
 <li>🌐 <strong>R-universe</strong>: Easy installation via <code>install.packages("SCORPION", repos = "https://zaoqu-liu.r-universe.dev")</code>
 </li>
@@ -146,7 +147,7 @@
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Zaoqu-Liu/SCORPION" class="external-link">SCORPION</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://zaoqu-liu.github.io/SCORPION/">SCORPION</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Load example data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">scorpionTest</span><span class="op">)</span></span>
@@ -227,7 +228,7 @@
 </h2>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Load package and data</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Zaoqu-Liu/SCORPION" class="external-link">SCORPION</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://zaoqu-liu.github.io/SCORPION/">SCORPION</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">scorpionTest</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Run SCORPION</span></span>

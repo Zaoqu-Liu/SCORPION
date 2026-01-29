@@ -11,11 +11,12 @@
 
 ## What's New 🎉
 
-**v1.2.1** (January 2026)
+**v1.2.2** (January 2026)
 
+- 🚀 **RcppArmadillo acceleration**: C++ implementation of core algorithms with BLAS optimization (~2.5x faster)
 - 📚 **Documentation website**: Full pkgdown site with tutorials at <https://zaoqu-liu.github.io/SCORPION/>
 - 📖 **Vignettes**: 4 comprehensive guides (Quick Start, Algorithm, Advanced Usage, Visualization)
-- ⚡ **Performance**: Vectorized operations for improved speed
+- ⚡ **Performance**: Vectorized operations + optimized BLAS for matrix computation
 - 🛡️ **Robustness**: Enhanced numerical stability in Tanimoto similarity
 - 🌐 **R-universe**: Easy installation via `install.packages("SCORPION", repos = "https://zaoqu-liu.r-universe.dev")`
 
