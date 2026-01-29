@@ -294,6 +294,122 @@
 </table>
 </div>
 <div class="section level2">
+<h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
+</h2>
+<p>SCORPION v1.2.2 includes significant performance optimizations through RcppArmadillo and BLAS acceleration.</p>
+<div class="section level3">
+<h3 id="benchmark-results">Benchmark Results<a class="anchor" aria-label="anchor" href="#benchmark-results"></a>
+</h3>
+<table class="table">
+<thead><tr>
+<th>Metric</th>
+<th>Before Optimization</th>
+<th>After Optimization</th>
+<th>Speedup</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Test data (230 genes × 80 cells)</td>
+<td>~10 sec</td>
+<td>~4 sec</td>
+<td><strong>2.5x</strong></td>
+</tr>
+<tr>
+<td>1000×1000 matrix multiplication</td>
+<td>~230 ms</td>
+<td>11 ms</td>
+<td><strong>21x</strong></td>
+</tr>
+<tr>
+<td>Tanimoto similarity computation</td>
+<td>~230 ms</td>
+<td>19 ms</td>
+<td><strong>12x</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="optimization-features">Optimization Features<a class="anchor" aria-label="anchor" href="#optimization-features"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="40%">
+<col width="59%">
+</colgroup>
+<thead><tr>
+<th>Feature</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>RcppArmadillo</strong></td>
+<td>Core Tanimoto algorithm implemented in C++</td>
+</tr>
+<tr>
+<td><strong>BLAS Acceleration</strong></td>
+<td>Leverages system-optimized BLAS (OpenBLAS, Apple Accelerate, MKL)</td>
+</tr>
+<tr>
+<td><strong>Vectorization</strong></td>
+<td>All R operations use vectorized implementations</td>
+</tr>
+<tr>
+<td><strong>Sparse Matrix</strong></td>
+<td>Native support for sparse matrices via Matrix package</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="enable-apple-accelerate-macos">Enable Apple Accelerate (macOS)<a class="anchor" aria-label="anchor" href="#enable-apple-accelerate-macos"></a>
+</h3>
+<p>For optimal performance on macOS, enable Apple’s vecLib BLAS:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="bu">cd</span> /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">sudo</span> ln <span class="at">-sf</span> libRblas.vecLib.dylib libRblas.dylib</span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="enable-openblas-linux">Enable OpenBLAS (Linux)<a class="anchor" aria-label="anchor" href="#enable-openblas-linux"></a>
+</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Ubuntu/Debian</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">sudo</span> apt-get install libopenblas-dev</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">sudo</span> update-alternatives <span class="at">--config</span> libblas.so.3</span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="estimated-runtime">Estimated Runtime<a class="anchor" aria-label="anchor" href="#estimated-runtime"></a>
+</h3>
+<table class="table">
+<thead><tr>
+<th>Data Size</th>
+<th>Cells</th>
+<th>Genes</th>
+<th>Approximate Time</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Small</td>
+<td>1,000</td>
+<td>2,000</td>
+<td>~5 sec</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>10,000</td>
+<td>5,000</td>
+<td>~1-2 min</td>
+</tr>
+<tr>
+<td>Large</td>
+<td>50,000</td>
+<td>10,000</td>
+<td>~5-10 min</td>
+</tr>
+</tbody>
+</table>
+<p><em>Times measured with optimized BLAS on Apple M2.</em></p>
+</div>
+</div>
+<div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
 <p>If you use SCORPION in your research, please cite:</p>

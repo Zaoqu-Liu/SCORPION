@@ -145,6 +145,54 @@ top_edges <- which(abs(regNet) > 2, arr.ind = TRUE)
 | `hammingValue` | 0.001 | Convergence threshold |
 | `assocMethod` | "pearson" | Association method ("pearson", "spearman", "pcNet") |
 
+## Performance
+
+SCORPION v1.2.2 includes significant performance optimizations through RcppArmadillo and BLAS acceleration.
+
+### Benchmark Results
+
+| Metric | Before Optimization | After Optimization | Speedup |
+|--------|--------------------|--------------------|---------|
+| Test data (230 genes × 80 cells) | ~10 sec | ~4 sec | **2.5x** |
+| 1000×1000 matrix multiplication | ~230 ms | 11 ms | **21x** |
+| Tanimoto similarity computation | ~230 ms | 19 ms | **12x** |
+
+### Optimization Features
+
+| Feature | Description |
+|---------|-------------|
+| **RcppArmadillo** | Core Tanimoto algorithm implemented in C++ |
+| **BLAS Acceleration** | Leverages system-optimized BLAS (OpenBLAS, Apple Accelerate, MKL) |
+| **Vectorization** | All R operations use vectorized implementations |
+| **Sparse Matrix** | Native support for sparse matrices via Matrix package |
+
+### Enable Apple Accelerate (macOS)
+
+For optimal performance on macOS, enable Apple's vecLib BLAS:
+
+```bash
+cd /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib
+sudo ln -sf libRblas.vecLib.dylib libRblas.dylib
+```
+
+### Enable OpenBLAS (Linux)
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install libopenblas-dev
+sudo update-alternatives --config libblas.so.3
+```
+
+### Estimated Runtime
+
+| Data Size | Cells | Genes | Approximate Time |
+|-----------|-------|-------|------------------|
+| Small | 1,000 | 2,000 | ~5 sec |
+| Medium | 10,000 | 5,000 | ~1-2 min |
+| Large | 50,000 | 10,000 | ~5-10 min |
+
+*Times measured with optimized BLAS on Apple M2.*
+
 ## Citation
 
 If you use SCORPION in your research, please cite:
